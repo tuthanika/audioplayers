@@ -136,6 +136,12 @@ jobs:
       - name: Example App - Build Android APK
         working-directory: ./packages/audioplayers/example
         run: flutter build apk --release
+        
+      - name: Upload pages artifact
+        if: inputs.upload_pages_artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build/android
 
   ios:
     runs-on: macos-14
