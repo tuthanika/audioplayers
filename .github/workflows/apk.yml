@@ -1,0 +1,58 @@
+name: Build and Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.x'
+          channel: 'stable'
+
+      - name: Set up Melos
+        uses: bluefireteam/melos-action@v3
+
+      - name: Install dependencies
+        working-directory: ./packages/audioplayers/example
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: ./packages/audioplayers/example
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audioplayers-example-apk
+          path: ./packages/audioplayers/example/build/app/outputs/flutter-apk/app-release.apk
+
+  release:
+    needs: build-apk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: audioplayers-example-apk
+          path: ./apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./apk/app-release.apk
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
